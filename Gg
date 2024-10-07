@@ -1,0 +1,184 @@
+-- Load Orion UI Library
+local OrionLib = loadstring(game:HttpGet(('https://raw.githubusercontent.com/shlexware/Orion/main/source')))()
+local Window = OrionLib:MakeWindow({Name = "Weapon Mayhem Script", HidePremium = false, SaveConfig = true, ConfigFolder = "WeaponMayhem"})
+
+-- UI Tabs
+local Tab = Window:MakeTab({
+    Name = "Main",
+    Icon = "rbxassetid://4483345998",
+    PremiumOnly = false
+})
+
+-- Variables
+local killAllEnabled = false
+local autoFarmEnabled = false
+local autoM1Enabled = false
+local selectedPlayer = nil
+local espEnabled = false
+local autoClickEnabled = false
+local autoBackpackEnabled = false
+
+-- Functions
+local function killAllPlayers()
+    while killAllEnabled do
+        local players = game:GetService("Players")
+        for _, player in pairs(players:GetPlayers()) do
+            if player.Character and player.Character:FindFirstChild("DeathFunction") then
+                player.Character.DeathFunction:InvokeServer()
+            end
+        end
+        wait(5) -- Wait 5 seconds before repeating the kill loop
+    end
+end
+
+local function autoFarm()
+    while autoFarmEnabled and selectedPlayer do
+        local targetCharacter = selectedPlayer.Character
+        if targetCharacter and targetCharacter:FindFirstChild("HumanoidRootPart") then
+            game:GetService("Players").LocalPlayer.Character.HumanoidRootPart.CFrame = targetCharacter.HumanoidRootPart.CFrame + Vector3.new(0, 10, 0) -- Teleport above the player's head
+        end
+        wait(0.5) -- Delay between teleports to avoid lagging
+    end
+end
+
+local function autoM1()
+    while autoM1Enabled do
+        local args = {
+            [1] = Vector3.new(10.974530220031738, 289.99267578125, -117.12277221679688),
+            [2] = 1
+        }
+        game:GetService("Players").LocalPlayer.Character.Dodgeball.Main.Activated:InvokeServer(unpack(args))
+        wait(0.5) -- Adjust the delay to control the attack speed
+    end
+end
+
+local function enableESP()
+    while espEnabled do
+        for _, player in pairs(game:GetService("Players"):GetPlayers()) do
+            if player ~= game:GetService("Players").LocalPlayer and player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
+                -- Create a Billboard GUI for ESP
+                local espGui = Instance.new("BillboardGui", player.Character.HumanoidRootPart)
+                espGui.Adornee = player.Character.HumanoidRootPart
+                espGui.Size = UDim2.new(2, 0, 2, 0)
+                espGui.AlwaysOnTop = true
+                
+                local textLabel = Instance.new("TextLabel", espGui)
+                textLabel.Text = player.Name
+                textLabel.Size = UDim2.new(1, 0, 1, 0)
+                textLabel.BackgroundTransparency = 1
+                textLabel.TextColor3 = Color3.fromRGB(255, 0, 0)
+                
+                wait(0.5) -- Update interval for ESP
+            end
+        end
+        wait(1) -- Check for new players every second
+    end
+end
+
+local function autoClickLMB()
+    while autoClickEnabled do
+        mouse1click() -- Simulate a left mouse button click
+        wait(0.1) -- Adjust this for how fast you want the auto-clicking to occur
+    end
+end
+
+local function autoBackpackItem()
+    while autoBackpackEnabled do
+        local backpack = game:GetService("Players").LocalPlayer.Backpack
+        local items = backpack:GetChildren()
+        if #items > 0 then
+            local randomItem = items[math.random(1, #items)]
+            randomItem.Parent = game:GetService("Players").LocalPlayer.Character -- Move the random item to the character
+            randomItem:Activate() -- Trigger the item (assuming it's a usable tool)
+        end
+        wait(1) -- Adjust delay between using random items
+    end
+end
+
+-- UI Buttons & Toggles
+Tab:AddToggle({
+    Name = "Kill All Players (Toggle)",
+    Default = false,
+    Callback = function(value)
+        killAllEnabled = value
+        if killAllEnabled then
+            killAllPlayers()
+        end
+    end    
+})
+
+Tab:AddDropdown({
+    Name = "Select Player for Auto-Farm",
+    Default = "",
+    Options = (function()
+        local players = game:GetService("Players")
+        local options = {}
+        for _, player in pairs(players:GetPlayers()) do
+            if player ~= game:GetService("Players").LocalPlayer then
+                table.insert(options, player.Name)
+            end
+        end
+        return options
+    end)(),
+    Callback = function(value)
+        selectedPlayer = game:GetService("Players"):FindFirstChild(value)
+    end
+})
+
+Tab:AddToggle({
+    Name = "Auto Farm Selected Player",
+    Default = false,
+    Callback = function(value)
+        autoFarmEnabled = value
+        if autoFarmEnabled then
+            autoFarm()
+        end
+    end    
+})
+
+Tab:AddToggle({
+    Name = "Auto M1 Attack",
+    Default = false,
+    Callback = function(value)
+        autoM1Enabled = value
+        if autoM1Enabled then
+            autoM1()
+        end
+    end    
+})
+
+Tab:AddToggle({
+    Name = "Enable ESP for Aimbot Gun",
+    Default = false,
+    Callback = function(value)
+        espEnabled = value
+        if espEnabled then
+            enableESP()
+        end
+    end    
+})
+
+Tab:AddToggle({
+    Name = "Auto Click LMB",
+    Default = false,
+    Callback = function(value)
+        autoClickEnabled = value
+        if autoClickEnabled then
+            autoClickLMB()
+        end
+    end    
+})
+
+Tab:AddToggle({
+    Name = "Auto Use Random Backpack Item",
+    Default = false,
+    Callback = function(value)
+        autoBackpackEnabled = value
+        if autoBackpackEnabled then
+            autoBackpackItem()
+        end
+    end    
+})
+
+-- Initialize UI
+OrionLib:Init(
